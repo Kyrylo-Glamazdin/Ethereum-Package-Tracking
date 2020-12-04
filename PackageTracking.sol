@@ -1,4 +1,5 @@
 pragma solidity >=0.4.22 <0.7.0;
+pragma experimental ABIEncoderV2;
 
 // Package tracking contract. Used for tracking packages and sending package status updates
 contract PackageTracking {
@@ -74,20 +75,33 @@ contract PackageTracking {
 
 
     // modifier checking if the user has the rights to provide package status updates
-    modifier canEditPackageStatus();
+    modifier canEditPackageStatus() {
+        require(networkUsers[msg.sender].hasEditRights, "Has no rights to edit");
+        _;
+    }
     //modifier checking if the user has the rights to appoint or discharge mail officials
-    modifier canAppointMailOfficials();
+    modifier canAppointMailOfficials() {
+        require(msg.sender == departmentManagement, "No rights to appoint officials");
+        _;
+    }
     
 
     // create a package tracking contract where @departmentManagement is the contract creator
-    constructor() public;
+    constructor() public {
+        departmentManagement = msg.sender;
+        networkUsers[departmentManagement].hasEditRights = true;
+    }
     
 
     // give editing rights to @mailman (can only be executed @departmentManagement)
-    function giveMailOfficialsPrivilege(address mailman) public canAppointMailOfficials;
+    function giveMailOfficialsPrivilege(address mailman) public canAppointMailOfficials {
+                networkUsers[mailman].hasEditRights = true;
+    }
 
     // take away editing rights from @mailman (can only be executed @departmentManagement)
-    function resignMailOfficial(address mailman) public canAppointMailOfficials;
+    function resignMailOfficial(address mailman) public canAppointMailOfficials {
+                networkUsers[mailman].hasEditRights = false;
+    }
 
     
     // add a new package to the blockchain (can only be executed by mail officials)
@@ -104,7 +118,26 @@ contract PackageTracking {
     ) 
         public 
         canEditPackageStatus 
-        returns (bool initiated, uint256 newPackageId);
+        returns (bool initiated, uint256 newPackageId) {
+            packages[currentPackageId].id = currentPackageId;
+            packages[currentPackageId].description = packageDescription_;
+            packages[currentPackageId].senderAddress = packageSenderAddress_;
+            packages[currentPackageId].receiverAddress = packageReceiverAddress_;
+            
+            initializePackage(currentPackageId, packageCurrentLocation_);
+
+            
+            networkUsers[packageSenderAddress_].sentPackageIDs.push(currentPackageId);
+            networkUsers[packageReceiverAddress_].receivedPackageIDs.push(currentPackageId);
+            
+            uint256 returnId = currentPackageId;
+            
+            currentPackageId++;
+            
+            emit PackageRegistered(returnId, packageDescription_, packageSenderAddress_, packageReceiverAddress_, packageCurrentLocation_, msg.sender);
+            
+            return (true, returnId);
+        }
 
     // internal function used to provide initial package status update
     // @packageId_ is the ID of the package
@@ -113,35 +146,84 @@ contract PackageTracking {
     function initializePackage(
         uint256 packageId_,
         string memory packageCurrentLocation_
-    ) internal;
+    ) internal {
+        PackageStatus memory updatedStatus = PackageStatus({
+            currentPackageState: State.Initialized,
+            statusTime: block.timestamp,
+            currentPackageLocation: packageCurrentLocation_,
+            updatedBy: msg.sender
+        });
+        
+        packages[packageId_].statusHistory.push(updatedStatus);
+        packages[packageId_].numOfStatusUpdates = 1;
+    }
 
     // function that provides a status update and indicates that the package has departed from @packageCurrentLocation_ (can only be executed by mail officials)
     // @packageId_ is the ID of the package
     function departed(
         uint256 packageId_,
         string memory packageCurrentLocation_
-    ) public canEditPackageStatus;
+    ) public canEditPackageStatus {
+        PackageStatus memory updatedStatus = PackageStatus({
+            currentPackageState: State.Departed,
+            statusTime: block.timestamp,
+            currentPackageLocation: packageCurrentLocation_,
+            updatedBy: msg.sender
+        });
+        
+        packages[packageId_].statusHistory.push(updatedStatus);
+        packages[packageId_].numOfStatusUpdates++;
+        
+        emit PackageDeparted(packageId_, packageCurrentLocation_, msg.sender);
+    }
 
     // function that provides a status update and indicates that the package has arrived to @packageCurrentLocation_ (can only be executed by mail officials)
     // @packageId_ is the ID of the package
     function arrived(
         uint256 packageId_,
         string memory packageCurrentLocation_
-    ) public canEditPackageStatus;
+    ) public canEditPackageStatus {
+        PackageStatus memory updatedStatus = PackageStatus({
+            currentPackageState: State.Arrived,
+            statusTime: block.timestamp,
+            currentPackageLocation: packageCurrentLocation_,
+            updatedBy: msg.sender
+        });
+        
+        packages[packageId_].statusHistory.push(updatedStatus);
+        packages[packageId_].numOfStatusUpdates++;
+        
+        emit PackageArrived(packageId_, packageCurrentLocation_, msg.sender);
+    }
 
     // function that provides a status update and indicates that the package has been delivered to @packageCurrentLocation_ (can only be executed by mail officials)
     // @packageId_ is the ID of the package
     function devivered(
         uint256 packageId_,
         string memory packageCurrentLocation_
-    ) public canEditPackageStatus;
+    ) public canEditPackageStatus {
+        PackageStatus memory updatedStatus = PackageStatus({
+            currentPackageState: State.Delivered,
+            statusTime: block.timestamp,
+            currentPackageLocation: packageCurrentLocation_,
+            updatedBy: msg.sender
+        });
+        
+        packages[packageId_].statusHistory.push(updatedStatus);
+        packages[packageId_].numOfStatusUpdates++;
+        
+        emit PackageDelivered(packageId_, packageCurrentLocation_, msg.sender);
+    }
 
 
     // returns true of package with @packageId_ has already been delivered
     function checkPackageDelivery(uint256 packageId_) 
         public 
         view 
-        returns (bool);
+        returns (bool) {
+            uint256 numOfStatusUpdatesIndex = packages[packageId_].numOfStatusUpdates - 1;
+            return packages[packageId_].statusHistory[numOfStatusUpdatesIndex].currentPackageState == State.Delivered;
+        }
 
     // returns the latest status update of package with @packageId_
     function getPackageLatestStatus(uint256 packageId_) 
@@ -152,25 +234,35 @@ contract PackageTracking {
             uint256, 
             string memory, 
             address
-        );
+        ) {
+            Package storage p = packages[packageId_];
+            PackageStatus storage s = p.statusHistory[p.statusHistory.length - 1];
+            return (s.currentPackageState, s.statusTime, s.currentPackageLocation, s.updatedBy);
+        }
 
     // returns the full status update history of the package with @packageId_
     function getPackageStatusHistory(uint256 packageId_) 
         public 
         view 
-        returns (PackageStatus[] memory);
+        returns (PackageStatus[] memory) {
+            return packages[packageId_].statusHistory;
+        }
 
     // get the IDs of all packages where msg.sender is the package sender
     function getAllSentPackageIDs() 
         public 
         view 
-        returns (uint256[] memory);
+        returns (uint256[] memory) {
+            return networkUsers[msg.sender].sentPackageIDs;
+        }
 
     // get the IDs of all packages where msg.sender is the package receiver
     function getAllReceivedPackageIDs() 
         public 
         view 
-        returns (uint256[] memory); 
+        returns (uint256[] memory) {
+            return networkUsers[msg.sender].receivedPackageIDs;
+        }
 }
 
 
