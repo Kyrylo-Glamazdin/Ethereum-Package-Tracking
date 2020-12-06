@@ -1,5 +1,5 @@
 pragma solidity >=0.4.22 <0.7.0;
-pragma experimental ABIEncoderV2;
+pragma experimental ABIEncoderV2; //this line enables the contract to return an array of structs in a function (used for getting the full package status history)
 
 // Package tracking contract. Used for tracking packages and sending package status updates
 contract PackageTracking {
@@ -119,11 +119,13 @@ contract PackageTracking {
         public 
         canEditPackageStatus 
         returns (bool initiated, uint256 newPackageId) {
+            //update new package info
             packages[currentPackageId].id = currentPackageId;
             packages[currentPackageId].description = packageDescription_;
             packages[currentPackageId].senderAddress = packageSenderAddress_;
             packages[currentPackageId].receiverAddress = packageReceiverAddress_;
             
+            //set package's very first status update saying that it has been initialized
             initializePackage(currentPackageId, packageCurrentLocation_);
 
             
@@ -198,7 +200,7 @@ contract PackageTracking {
 
     // function that provides a status update and indicates that the package has been delivered to @packageCurrentLocation_ (can only be executed by mail officials)
     // @packageId_ is the ID of the package
-    function devivered(
+    function delivered(
         uint256 packageId_,
         string memory packageCurrentLocation_
     ) public canEditPackageStatus {
@@ -230,10 +232,10 @@ contract PackageTracking {
         public 
         view 
         returns (
-            State, 
-            uint256, 
-            string memory, 
-            address
+            State updateState, 
+            uint256 updateTime, 
+            string memory updateLocation, 
+            address updateAddress
         ) {
             Package storage p = packages[packageId_];
             PackageStatus storage s = p.statusHistory[p.statusHistory.length - 1];
