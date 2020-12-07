@@ -66,3 +66,36 @@ struct NetworkUser {
 ```
 
 The address of department management is stored as a separate variable in the contract
+
+## Installation
+
+Clone the repo, cd into it, and type:
+```
+npm install
+```
+This will install all of the dependencies. To run the tests, type:
+```
+./node_modules/.bin/truffle test
+```
+This will run the tests that ensure the correctness of contract's functionality.
+
+#
+
+The contract itself can be found at 
+```
+/contracts/PackageTracking.sol
+```
+The tests can be found at
+```
+/test/PackageTrackingTest.js
+/test/PackageTrackingTest.sol
+```
+
+The majority of the tests are written in JavaScript because it allows to test the contract from multiple addresses (which is crucial for this contract).
+
+## Sources
+
+Ethereum contract testing essentials: https://michalzalecki.com/ethereum-test-driven-introduction-to-solidity/
+Using truffle assertions: https://www.npmjs.com/package/truffle-assertions
+Truffle documentation: https://www.trufflesuite.com/docs/truffle/getting-started/interacting-with-your-contracts
+Solving variable type issues: https://ethereum.stackexchange.com/questions/79324/mocha-assertions-not-returning-correctly-on-assert-equal-with-bn
