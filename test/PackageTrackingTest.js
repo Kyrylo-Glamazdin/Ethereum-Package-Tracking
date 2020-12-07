@@ -395,6 +395,3 @@ function decodeSinglePackageStatus(packageStatus) {
 
   return statusString
 }
-
-//https://ethereum.stackexchange.com/questions/48627/how-to-catch-revert-error-in-truffle-test-javascript/48629
-//https://www.npmjs.com/package/truffle-assertions
