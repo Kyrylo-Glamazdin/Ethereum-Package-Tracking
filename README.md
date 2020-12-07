@@ -95,7 +95,7 @@ The majority of the tests are written in JavaScript because it allows to test th
 
 ## Sources
 
-Ethereum contract testing essentials: https://michalzalecki.com/ethereum-test-driven-introduction-to-solidity/
-Using truffle assertions: https://www.npmjs.com/package/truffle-assertions
-Truffle documentation: https://www.trufflesuite.com/docs/truffle/getting-started/interacting-with-your-contracts
-Solving variable type issues: https://ethereum.stackexchange.com/questions/79324/mocha-assertions-not-returning-correctly-on-assert-equal-with-bn
+* Ethereum contract testing essentials: https://michalzalecki.com/ethereum-test-driven-introduction-to-solidity/
+* Using truffle assertions: https://www.npmjs.com/package/truffle-assertions
+* Truffle documentation: https://www.trufflesuite.com/docs/truffle/getting-started/interacting-with-your-contracts
+* Solving variable type issues: https://ethereum.stackexchange.com/questions/79324/mocha-assertions-not-returning-correctly-on-assert-equal-with-bn
