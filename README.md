@@ -1,11 +1,5 @@
 # Ethereum-Package-Tracking
 
-## Names & emails 
-
-Kyrylo Glamazdin. kyrylo.glamazdin36@myhunter.cuny.edu
-
-## Purpose of contract
-
 The purpose of this smart contract is to provide an infrastructure for reliable and secure tracking of letters and packages. By storing all package-related information on the immutable blockchain ledger, the users will be able to view all the up-to-date information about the current status of their package(s), as well as its status & location history.
 
 #
